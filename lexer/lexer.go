@@ -77,7 +77,39 @@ func isDigit(ch byte) bool {
 }
 
 func (l *Lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+	for {
+		if l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+			l.readChar()
+			continue
+		} else if l.ch == '/' && l.peekChar(0) == '/' {
+			l.skipSingleLineComment()
+			continue
+		} else if l.ch == '/' && l.peekChar(0) == '*' {
+			l.skipMultiLineComment()
+			continue
+		}
+		break
+	}
+}
+
+func (l *Lexer) skipSingleLineComment() {
+	for {
+		if l.ch == '\n' || l.ch == 0 {
+			break
+		}
+		l.readChar()
+	}
+}
+
+func (l *Lexer) skipMultiLineComment() {
+	l.readChar()
+	l.readChar()
+	for {
+		if l.ch == '*' && l.peekChar(0) == '/' || l.ch == 0 {
+			l.readChar()
+			l.readChar()
+			break
+		}
 		l.readChar()
 	}
 }

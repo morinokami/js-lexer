@@ -1,6 +1,11 @@
 package lexer
 
-import "github.com/morinokami/js-lexer/token"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/morinokami/js-lexer/token"
+)
 
 type Lexer struct {
 	input        string
@@ -56,8 +61,11 @@ func (l *Lexer) readString(quote byte) string {
 		if l.ch == quote || l.ch == 0 {
 			break
 		}
+		if l.ch == '\\' && l.peekChar(0) == quote {
+			l.readChar()
+		}
 	}
-	return l.input[position:l.position]
+	return strings.ReplaceAll(l.input[position:l.position], fmt.Sprintf("\\%s", string(quote)), string(quote))
 }
 
 func isLetter(ch byte) bool {

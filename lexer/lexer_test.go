@@ -283,6 +283,10 @@ false
 123
 "hello"
 'world'
+"こんにちは, 世界🌮"
+'Murphy\'s law'
+"\"And God created great whales.\""
+'\\\t\n\v'
 `
 
 	tests := []struct {
@@ -296,6 +300,10 @@ false
 		{makeTT(token.Numeric), "123"},
 		{makeTT(token.String), "hello"},
 		{makeTT(token.String), "world"},
+		{makeTT(token.String), "こんにちは, 世界🌮"},
+		{makeTT(token.String), "Murphy's law"},
+		{makeTT(token.String), `"And God created great whales."`},
+		{makeTT(token.String), "\\\\\\t\\n\\v"},
 	}
 
 	l := New(input)

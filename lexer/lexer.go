@@ -49,6 +49,17 @@ func (l *Lexer) readNumber() string {
 	return l.input[position:l.position]
 }
 
+func (l *Lexer) readString(quote byte) string {
+	position := l.position + 1
+	for {
+		l.readChar()
+		if l.ch == quote || l.ch == 0 {
+			break
+		}
+	}
+	return l.input[position:l.position]
+}
+
 func isLetter(ch byte) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
 }
@@ -252,6 +263,13 @@ func (l *Lexer) NextToken() token.Token {
 		// Bitwise NOT
 		tok = newToken(token.Tilde, l.ch)
 
+	// Literals
+	case '"', '\'':
+		// String
+		tok.Type = token.TokenType{Label: token.String}
+		tok.Literal = l.readString(l.ch)
+	// TODO: Other numeric literals, regex, template literal, ...
+
 	// EOF
 	case 0:
 		tok.Literal = ""
@@ -263,7 +281,7 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Type = token.LookupIdent(tok.Literal)
 			return tok
 		} else if isDigit(l.ch) {
-			tok.Type = token.TokenType{Label: token.INT}
+			tok.Type = token.TokenType{Label: token.Numeric}
 			tok.Literal = l.readNumber()
 			return tok
 		} else {

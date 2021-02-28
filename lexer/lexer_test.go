@@ -322,3 +322,48 @@ false
 		}
 	}
 }
+
+func TestIdentifier(t *testing.T) {
+	input := `
+x
+hello
+abc123
+$
+$height9
+_
+_x
+_$
+$_
+`
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		{makeTT(token.Identifier), "x"},
+		{makeTT(token.Identifier), "hello"},
+		{makeTT(token.Identifier), "abc123"},
+		{makeTT(token.Identifier), "$"},
+		{makeTT(token.Identifier), "$height9"},
+		{makeTT(token.Identifier), "_"},
+		{makeTT(token.Identifier), "_x"},
+		{makeTT(token.Identifier), "_$"},
+		{makeTT(token.Identifier), "$_"},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}

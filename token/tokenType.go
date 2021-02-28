@@ -13,7 +13,7 @@ const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
 
-	IDENT = "IDENT"
+	Identifier = "identifier"
 
 	// Keywords
 	Await      = "await"
@@ -165,5 +165,5 @@ func LookupIdent(ident string) TokenType {
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}
-	return TokenType{IDENT}
+	return TokenType{Identifier}
 }

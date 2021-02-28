@@ -14,7 +14,6 @@ const (
 	EOF     = "EOF"
 
 	IDENT = "IDENT"
-	INT   = "INT"
 
 	// Keywords
 	Await      = "await"
@@ -113,6 +112,12 @@ const (
 	BitwiseOrAssignment          = "|="
 	BitwiseXorAssignment         = "^="
 	Arrow                        = "=>"
+
+	// Literals
+	Numeric  = "numeric"
+	String   = "string"
+	Regex    = "regex"
+	Template = "template"
 )
 
 var keywords = map[string]TokenType{

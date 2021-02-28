@@ -273,3 +273,44 @@ func TestOperators(t *testing.T) {
 		}
 	}
 }
+
+func TestLiteral(t *testing.T) {
+	input := `
+null
+true
+false
+0
+123
+"hello"
+'world'
+`
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		{makeTT(token.Null), "null"},
+		{makeTT(token.True), "true"},
+		{makeTT(token.False), "false"},
+		{makeTT(token.Numeric), "0"},
+		{makeTT(token.Numeric), "123"},
+		{makeTT(token.String), "hello"},
+		{makeTT(token.String), "world"},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}

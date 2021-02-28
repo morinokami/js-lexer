@@ -312,8 +312,8 @@ func (l *Lexer) NextToken() token.Token {
 
 	// EOF
 	case 0:
-		tok.Literal = ""
 		tok.Type = token.TokenType{Label: token.EOF}
+		tok.Literal = ""
 
 	default:
 		if isLetter(l.ch) {

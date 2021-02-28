@@ -410,3 +410,84 @@ false
 		}
 	}
 }
+
+func TestNextToken(t *testing.T) {
+	input := `
+const gcd = (a, b) => {
+  if (b === 0) {
+    return a;
+  }
+  return gcd(b, a % b);
+};
+
+console.log(gcd(1263262, 553443)); // 11
+`
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		{makeTT(token.Const), "const"},
+		{makeTT(token.Identifier), "gcd"},
+		{makeTT(token.Assignment), "="},
+		{makeTT(token.LParen), "("},
+		{makeTT(token.Identifier), "a"},
+		{makeTT(token.Comma), ","},
+		{makeTT(token.Identifier), "b"},
+		{makeTT(token.RParen), ")"},
+		{makeTT(token.Arrow), "=>"},
+		{makeTT(token.LBrace), "{"},
+		{makeTT(token.If), "if"},
+		{makeTT(token.LParen), "("},
+		{makeTT(token.Identifier), "b"},
+		{makeTT(token.Identity), "==="},
+		{makeTT(token.Numeric), "0"},
+		{makeTT(token.RParen), ")"},
+		{makeTT(token.LBrace), "{"},
+		{makeTT(token.Return), "return"},
+		{makeTT(token.Identifier), "a"},
+		{makeTT(token.Semicolon), ";"},
+		{makeTT(token.RBrace), "}"},
+		{makeTT(token.Return), "return"},
+		{makeTT(token.Identifier), "gcd"},
+		{makeTT(token.LParen), "("},
+		{makeTT(token.Identifier), "b"},
+		{makeTT(token.Comma), ","},
+		{makeTT(token.Identifier), "a"},
+		{makeTT(token.Remainder), "%"},
+		{makeTT(token.Identifier), "b"},
+		{makeTT(token.RParen), ")"},
+		{makeTT(token.Semicolon), ";"},
+		{makeTT(token.RBrace), "}"},
+		{makeTT(token.Semicolon), ";"},
+		{makeTT(token.Identifier), "console"},
+		{makeTT(token.Dot), "."},
+		{makeTT(token.Identifier), "log"},
+		{makeTT(token.LParen), "("},
+		{makeTT(token.Identifier), "gcd"},
+		{makeTT(token.LParen), "("},
+		{makeTT(token.Numeric), "1263262"},
+		{makeTT(token.Comma), ","},
+		{makeTT(token.Numeric), "553443"},
+		{makeTT(token.RParen), ")"},
+		{makeTT(token.RParen), ")"},
+		{makeTT(token.Semicolon), ";"},
+		{makeTT(token.EOF), ""},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}

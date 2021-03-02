@@ -52,7 +52,11 @@ func (l *Lexer) readIdentifier() string {
 
 func (l *Lexer) readNumber() string {
 	position := l.position
-	for isDigit(l.ch) {
+	readDecimalPoint := false
+	for isDigit(l.ch) || (l.ch == '.' && !readDecimalPoint) {
+		if l.ch == '.' {
+			readDecimalPoint = true
+		}
 		l.readChar()
 	}
 	return l.input[position:l.position]
@@ -162,6 +166,11 @@ func (l *Lexer) NextToken() token.Token {
 		if l.peekChar(0) == '.' && l.peekChar(1) == '.' {
 			// Spread syntax
 			tok = makeMultiCharToken(l, token.Ellipsis, 2)
+		} else if isDigit(l.peekChar(0)) {
+			tok.Type = token.TokenType{Label: token.Numeric}
+			tok.Literal = l.readNumber()
+			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
+			return tok
 		} else {
 			tok = newToken(token.Dot, l.ch)
 		}

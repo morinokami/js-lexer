@@ -380,8 +380,11 @@ func TestLiteral(t *testing.T) {
 null
 true
 false
+-99
 0
 123
+3.14
+1.23.45
 "hello"
 'world'
 "こんにちは, 世界🌮"
@@ -397,8 +400,13 @@ false
 		{makeTT(token.Null), "null"},
 		{makeTT(token.True), "true"},
 		{makeTT(token.False), "false"},
+		{makeTT(token.Minus), "-"},
+		{makeTT(token.Numeric), "99"},
 		{makeTT(token.Numeric), "0"},
 		{makeTT(token.Numeric), "123"},
+		{makeTT(token.Numeric), "3.14"},
+		{makeTT(token.Numeric), "1.23"},
+		{makeTT(token.Numeric), ".45"},
 		{makeTT(token.String), "hello"},
 		{makeTT(token.String), "world"},
 		{makeTT(token.String), "こんにちは, 世界🌮"},

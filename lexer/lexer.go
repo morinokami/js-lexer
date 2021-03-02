@@ -12,6 +12,8 @@ type Lexer struct {
 	position     int
 	readPosition int
 	ch           byte
+	line         int
+	column       int
 }
 
 func New(input string) *Lexer {
@@ -22,12 +24,14 @@ func New(input string) *Lexer {
 
 func (l *Lexer) readChar() {
 	if l.readPosition >= len(l.input) {
+		// EOF
 		l.ch = 0
 	} else {
 		l.ch = l.input[l.readPosition]
 	}
 	l.position = l.readPosition
 	l.readPosition += 1
+	l.column += 1
 }
 
 func (l *Lexer) peekChar(n int) byte {
@@ -79,6 +83,10 @@ func isDigit(ch byte) bool {
 func (l *Lexer) skipWhitespace() {
 	for {
 		if l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
+			if l.ch == '\n' {
+				l.line += 1
+				l.column = 0
+			}
 			l.readChar()
 			continue
 		} else if l.ch == '/' && l.peekChar(0) == '/' {
@@ -114,10 +122,26 @@ func (l *Lexer) skipMultiLineComment() {
 	}
 }
 
+func (l *Lexer) makeSourceLocation(lineStart, colStart, adjustment int) token.SourceLocation {
+	return token.SourceLocation{
+		Start: token.Position{
+			Line:   lineStart,
+			Column: colStart,
+		},
+		End: token.Position{
+			Line:   l.line,
+			Column: l.column + adjustment,
+		},
+	}
+}
+
 func (l *Lexer) NextToken() token.Token {
 	var tok token.Token
 
 	l.skipWhitespace()
+
+	lineStart := l.line
+	colStart := l.column - 1
 
 	switch l.ch {
 
@@ -314,20 +338,26 @@ func (l *Lexer) NextToken() token.Token {
 	case 0:
 		tok.Type = token.TokenType{Label: token.EOF}
 		tok.Literal = ""
+		tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
+		return tok
 
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
+			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
 			return tok
 		} else if isDigit(l.ch) {
 			tok.Type = token.TokenType{Label: token.Numeric}
 			tok.Literal = l.readNumber()
+			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
 			return tok
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
 		}
 	}
+
+	tok.Loc = l.makeSourceLocation(lineStart, colStart, 0)
 
 	l.readChar()
 

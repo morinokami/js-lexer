@@ -4,9 +4,20 @@ type TokenType struct {
 	Label string
 }
 
+type Position struct {
+	Line   int
+	Column int
+}
+
+type SourceLocation struct {
+	Start Position
+	End   Position
+}
+
 type Token struct {
 	Type    TokenType
 	Literal string
+	Loc     SourceLocation
 }
 
 const (

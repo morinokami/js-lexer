@@ -10,6 +10,19 @@ func makeTT(label string) token.TokenType {
 	return token.TokenType{Label: label}
 }
 
+func makeLoc(line0, col0, line1, col1 int) token.SourceLocation {
+	return token.SourceLocation{
+		Start: token.Position{
+			Line:   line0,
+			Column: col0,
+		},
+		End: token.Position{
+			Line:   line1,
+			Column: col1,
+		},
+	}
+}
+
 func TestComment(t *testing.T) {
 	input := `
 // single line comment
@@ -253,7 +266,7 @@ func TestPunctuator(t *testing.T) {
 	}
 }
 
-func TestOperators(t *testing.T) {
+func TestOperator(t *testing.T) {
 	input := `
 <
 >
@@ -411,68 +424,20 @@ false
 	}
 }
 
-func TestNextToken(t *testing.T) {
-	input := `
-const gcd = (a, b) => {
-  if (b === 0) {
-    return a;
-  }
-  return gcd(b, a % b);
-};
-
-console.log(gcd(1263262, 553443)); // 11
-`
+func TestSourceLocation(t *testing.T) {
+	input := `/**/===
+?? hello;`
 
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
+		expectedLoc     token.SourceLocation
 	}{
-		{makeTT(token.Const), "const"},
-		{makeTT(token.Identifier), "gcd"},
-		{makeTT(token.Assignment), "="},
-		{makeTT(token.LParen), "("},
-		{makeTT(token.Identifier), "a"},
-		{makeTT(token.Comma), ","},
-		{makeTT(token.Identifier), "b"},
-		{makeTT(token.RParen), ")"},
-		{makeTT(token.Arrow), "=>"},
-		{makeTT(token.LBrace), "{"},
-		{makeTT(token.If), "if"},
-		{makeTT(token.LParen), "("},
-		{makeTT(token.Identifier), "b"},
-		{makeTT(token.Identity), "==="},
-		{makeTT(token.Numeric), "0"},
-		{makeTT(token.RParen), ")"},
-		{makeTT(token.LBrace), "{"},
-		{makeTT(token.Return), "return"},
-		{makeTT(token.Identifier), "a"},
-		{makeTT(token.Semicolon), ";"},
-		{makeTT(token.RBrace), "}"},
-		{makeTT(token.Return), "return"},
-		{makeTT(token.Identifier), "gcd"},
-		{makeTT(token.LParen), "("},
-		{makeTT(token.Identifier), "b"},
-		{makeTT(token.Comma), ","},
-		{makeTT(token.Identifier), "a"},
-		{makeTT(token.Remainder), "%"},
-		{makeTT(token.Identifier), "b"},
-		{makeTT(token.RParen), ")"},
-		{makeTT(token.Semicolon), ";"},
-		{makeTT(token.RBrace), "}"},
-		{makeTT(token.Semicolon), ";"},
-		{makeTT(token.Identifier), "console"},
-		{makeTT(token.Dot), "."},
-		{makeTT(token.Identifier), "log"},
-		{makeTT(token.LParen), "("},
-		{makeTT(token.Identifier), "gcd"},
-		{makeTT(token.LParen), "("},
-		{makeTT(token.Numeric), "1263262"},
-		{makeTT(token.Comma), ","},
-		{makeTT(token.Numeric), "553443"},
-		{makeTT(token.RParen), ")"},
-		{makeTT(token.RParen), ")"},
-		{makeTT(token.Semicolon), ";"},
-		{makeTT(token.EOF), ""},
+		{makeTT(token.Identity), "===", makeLoc(0, 4, 0, 7)},
+		{makeTT(token.NullishCoalescing), "??", makeLoc(1, 0, 1, 2)},
+		{makeTT(token.Identifier), "hello", makeLoc(1, 3, 1, 8)},
+		{makeTT(token.Semicolon), ";", makeLoc(1, 8, 1, 9)},
+		{makeTT(token.EOF), "", makeLoc(1, 9, 1, 9)},
 	}
 
 	l := New(input)
@@ -488,6 +453,98 @@ console.log(gcd(1263262, 553443)); // 11
 		if tok.Literal != tt.expectedLiteral {
 			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
 				i, tt.expectedLiteral, tok.Literal)
+		}
+
+		if tok.Loc != tt.expectedLoc {
+			t.Fatalf("tests[%d] - location wrong. expected=%+v, got=%+v",
+				i, tt.expectedLoc, tok.Loc)
+		}
+	}
+}
+
+func TestNextToken(t *testing.T) {
+	input := `// calculate gcd of a and b
+const gcd = (a, b) => {
+  if (b === 0) {
+    return a;
+  }
+  return gcd(b, a % b);
+};
+
+console.log(gcd(1263262, 553443)); // 11
+`
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+		expectedLoc     token.SourceLocation
+	}{
+		{makeTT(token.Const), "const", makeLoc(1, 0, 1, 5)},
+		{makeTT(token.Identifier), "gcd", makeLoc(1, 6, 1, 9)},
+		{makeTT(token.Assignment), "=", makeLoc(1, 10, 1, 11)},
+		{makeTT(token.LParen), "(", makeLoc(1, 12, 1, 13)},
+		{makeTT(token.Identifier), "a", makeLoc(1, 13, 1, 14)},
+		{makeTT(token.Comma), ",", makeLoc(1, 14, 1, 15)},
+		{makeTT(token.Identifier), "b", makeLoc(1, 16, 1, 17)},
+		{makeTT(token.RParen), ")", makeLoc(1, 17, 1, 18)},
+		{makeTT(token.Arrow), "=>", makeLoc(1, 19, 1, 21)},
+		{makeTT(token.LBrace), "{", makeLoc(1, 22, 1, 23)},
+		{makeTT(token.If), "if", makeLoc(2, 2, 2, 4)},
+		{makeTT(token.LParen), "(", makeLoc(2, 5, 2, 6)},
+		{makeTT(token.Identifier), "b", makeLoc(2, 6, 2, 7)},
+		{makeTT(token.Identity), "===", makeLoc(2, 8, 2, 11)},
+		{makeTT(token.Numeric), "0", makeLoc(2, 12, 2, 13)},
+		{makeTT(token.RParen), ")", makeLoc(2, 13, 2, 14)},
+		{makeTT(token.LBrace), "{", makeLoc(2, 15, 2, 16)},
+		{makeTT(token.Return), "return", makeLoc(3, 4, 3, 10)},
+		{makeTT(token.Identifier), "a", makeLoc(3, 11, 3, 12)},
+		{makeTT(token.Semicolon), ";", makeLoc(3, 12, 3, 13)},
+		{makeTT(token.RBrace), "}", makeLoc(4, 2, 4, 3)},
+		{makeTT(token.Return), "return", makeLoc(5, 2, 5, 8)},
+		{makeTT(token.Identifier), "gcd", makeLoc(5, 9, 5, 12)},
+		{makeTT(token.LParen), "(", makeLoc(5, 12, 5, 13)},
+		{makeTT(token.Identifier), "b", makeLoc(5, 13, 5, 14)},
+		{makeTT(token.Comma), ",", makeLoc(5, 14, 5, 15)},
+		{makeTT(token.Identifier), "a", makeLoc(5, 16, 5, 17)},
+		{makeTT(token.Remainder), "%", makeLoc(5, 18, 5, 19)},
+		{makeTT(token.Identifier), "b", makeLoc(5, 20, 5, 21)},
+		{makeTT(token.RParen), ")", makeLoc(5, 21, 5, 22)},
+		{makeTT(token.Semicolon), ";", makeLoc(5, 22, 5, 23)},
+		{makeTT(token.RBrace), "}", makeLoc(6, 0, 6, 1)},
+		{makeTT(token.Semicolon), ";", makeLoc(6, 1, 6, 2)},
+		{makeTT(token.Identifier), "console", makeLoc(8, 0, 8, 7)},
+		{makeTT(token.Dot), ".", makeLoc(8, 7, 8, 8)},
+		{makeTT(token.Identifier), "log", makeLoc(8, 8, 8, 11)},
+		{makeTT(token.LParen), "(", makeLoc(8, 11, 8, 12)},
+		{makeTT(token.Identifier), "gcd", makeLoc(8, 12, 8, 15)},
+		{makeTT(token.LParen), "(", makeLoc(8, 15, 8, 16)},
+		{makeTT(token.Numeric), "1263262", makeLoc(8, 16, 8, 23)},
+		{makeTT(token.Comma), ",", makeLoc(8, 23, 8, 24)},
+		{makeTT(token.Numeric), "553443", makeLoc(8, 25, 8, 31)},
+		{makeTT(token.RParen), ")", makeLoc(8, 31, 8, 32)},
+		{makeTT(token.RParen), ")", makeLoc(8, 32, 8, 33)},
+		{makeTT(token.Semicolon), ";", makeLoc(8, 33, 8, 34)},
+		{makeTT(token.EOF), "", makeLoc(9, 0, 9, 0)},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+
+		if tok.Loc != tt.expectedLoc {
+			t.Fatalf("tests[%d] - location wrong. expected=%+v, got=%+v",
+				i, tt.expectedLoc, tok.Loc)
 		}
 	}
 }

@@ -62,18 +62,21 @@ func (l *Lexer) readNumber() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) readString(quote byte) string {
+func (l *Lexer) readString(quote byte) (string, error) {
+	literalStart := l.column - 1
 	position := l.position + 1
 	for {
 		l.readChar()
-		if l.ch == quote || l.ch == 0 {
+		if l.ch == quote {
 			break
-		}
-		if l.ch == '\\' && l.peekChar(0) == quote {
+		} else if l.ch == '\\' && l.peekChar(0) == quote {
 			l.readChar()
+		} else if l.ch == 0 || l.ch == '\n' {
+			return "", fmt.Errorf("SyntaxError: Unterminated string constant (%d:%d)", l.line, literalStart)
 		}
 	}
-	return strings.ReplaceAll(l.input[position:l.position], fmt.Sprintf("\\%s", string(quote)), string(quote))
+	escapedQuote := fmt.Sprintf("\\%s", string(quote))
+	return strings.ReplaceAll(l.input[position:l.position], escapedQuote, string(quote)), nil
 }
 
 func isLetter(ch byte) bool {
@@ -340,7 +343,11 @@ func (l *Lexer) NextToken() token.Token {
 	case '"', '\'':
 		// String
 		tok.Type = token.TokenType{Label: token.String}
-		tok.Literal = l.readString(l.ch)
+		var err error
+		tok.Literal, err = l.readString(l.ch)
+		if err != nil {
+			panic(err.Error())
+		}
 	// TODO: Other numeric literals, regex, template literal, ...
 
 	// EOF
@@ -362,7 +369,8 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
 			return tok
 		} else {
-			tok = newToken(token.ILLEGAL, l.ch)
+			panic(fmt.Sprintf("SyntaxError: Unexpected character '%s' (%d:%d)",
+				string(l.ch), lineStart, colStart))
 		}
 	}
 

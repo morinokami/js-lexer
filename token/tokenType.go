@@ -21,8 +21,7 @@ type Token struct {
 }
 
 const (
-	ILLEGAL = "ILLEGAL"
-	EOF     = "eof"
+	EOF = "eof"
 
 	Identifier = "identifier"
 

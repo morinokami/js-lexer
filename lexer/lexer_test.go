@@ -556,3 +556,43 @@ console.log(gcd(1263262, 553443)); // 11
 		}
 	}
 }
+
+func TestError(t *testing.T) {
+	inputs := []string{
+		"# ",
+		"@",
+		"'123",
+		"\"foo",
+		"\n\"bar\n\"",
+	}
+
+	tests := []struct {
+		expectedMessage string
+	}{
+		{"SyntaxError: Unexpected character '#' (0:0)"},
+		{"SyntaxError: Unexpected character '@' (0:0)"},
+		{"SyntaxError: Unterminated string constant (0:0)"},
+		{"SyntaxError: Unterminated string constant (0:0)"},
+		{"SyntaxError: Unterminated string constant (1:0)"},
+	}
+
+	for i, tt := range tests {
+		func() {
+			defer func() {
+				err := recover()
+
+				if err == nil {
+					t.Fatalf("tests[%d] - did not panic.", i)
+				}
+
+				if err != tt.expectedMessage {
+					t.Fatalf("tests[%d] - unexpected error message. expected=%q, got=%q",
+						i, tt.expectedMessage, err)
+				}
+			}()
+
+			l := New(inputs[i])
+			l.NextToken()
+		}()
+	}
+}

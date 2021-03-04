@@ -385,6 +385,12 @@ false
 123
 3.14
 1.23.45
+0b111
+0b0101010
+0B0
+0B000
+0b123
+-0b1
 "hello"
 'world'
 "こんにちは, 世界🌮"
@@ -407,6 +413,14 @@ false
 		{makeTT(token.Numeric), "3.14"},
 		{makeTT(token.Numeric), "1.23"},
 		{makeTT(token.Numeric), ".45"},
+		{makeTT(token.Numeric), "0b111"},
+		{makeTT(token.Numeric), "0b0101010"},
+		{makeTT(token.Numeric), "0B0"},
+		{makeTT(token.Numeric), "0B000"},
+		{makeTT(token.Numeric), "0b1"},
+		{makeTT(token.Numeric), "23"},
+		{makeTT(token.Minus), "-"},
+		{makeTT(token.Numeric), "0b1"},
 		{makeTT(token.String), "hello"},
 		{makeTT(token.String), "world"},
 		{makeTT(token.String), "こんにちは, 世界🌮"},
@@ -564,6 +578,8 @@ func TestError(t *testing.T) {
 		"'123",
 		"\"foo",
 		"\n\"bar\n\"",
+		"0b",
+		"\n0B2",
 	}
 
 	tests := []struct {
@@ -574,6 +590,8 @@ func TestError(t *testing.T) {
 		{"SyntaxError: Unterminated string constant (0:0)"},
 		{"SyntaxError: Unterminated string constant (0:0)"},
 		{"SyntaxError: Unterminated string constant (1:0)"},
+		{"SyntaxError: Expected number in radix 2 (0:2)"},
+		{"SyntaxError: Expected number in radix 2 (1:2)"},
 	}
 
 	for i, tt := range tests {

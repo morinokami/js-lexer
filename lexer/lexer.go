@@ -1,6 +1,7 @@
 package lexer
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -50,7 +51,19 @@ func (l *Lexer) readIdentifier() string {
 	return l.input[position:l.position]
 }
 
-func (l *Lexer) readNumber() string {
+func (l *Lexer) readNumber() (string, error) {
+	if l.ch == '0' {
+		next := l.peekChar(0)
+		if next == 'B' || next == 'b' {
+			return l.readBinaryNumber()
+		}
+		//else if next == 'X' || next == 'x' {
+		//	return l.readHexadecimalNumber()
+		//} else {
+		//	return l.readOctalNumber()
+		//}
+	}
+
 	position := l.position
 	readDecimalPoint := false
 	for isDigit(l.ch) || (l.ch == '.' && !readDecimalPoint) {
@@ -59,7 +72,32 @@ func (l *Lexer) readNumber() string {
 		}
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.position], nil
+}
+
+func (l *Lexer) readBinaryNumber() (string, error) {
+	position := l.position
+	l.readChar() // skip '0'
+	l.readChar() // skip 'b' or 'B'
+
+	if l.ch != '0' && l.ch != '1' {
+		return "", errors.New(fmt.Sprintf("SyntaxError: Expected number in radix 2 (%d:%d)", l.line, l.column-1))
+	}
+
+	for l.ch == '0' || l.ch == '1' {
+		l.readChar()
+	}
+	return l.input[position:l.position], nil
+}
+
+func (l *Lexer) readOctalNumber() string {
+	// TODO
+	return ""
+}
+
+func (l *Lexer) readHexadecimalNumber() string {
+	// TODO
+	return ""
 }
 
 func (l *Lexer) readString(quote byte) (string, error) {
@@ -171,7 +209,11 @@ func (l *Lexer) NextToken() token.Token {
 			tok = makeMultiCharToken(l, token.Ellipsis, 2)
 		} else if isDigit(l.peekChar(0)) {
 			tok.Type = token.TokenType{Label: token.Numeric}
-			tok.Literal = l.readNumber()
+			var err error
+			tok.Literal, err = l.readNumber()
+			if err != nil {
+				panic(err.Error())
+			}
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
 			return tok
 		} else {
@@ -365,7 +407,11 @@ func (l *Lexer) NextToken() token.Token {
 			return tok
 		} else if isDigit(l.ch) {
 			tok.Type = token.TokenType{Label: token.Numeric}
-			tok.Literal = l.readNumber()
+			var err error
+			tok.Literal, err = l.readNumber()
+			if err != nil {
+				panic(err.Error())
+			}
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
 			return tok
 		} else {

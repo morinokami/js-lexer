@@ -56,10 +56,10 @@ func (l *Lexer) readNumber() (string, error) {
 		next := l.peekChar(0)
 		if next == 'B' || next == 'b' {
 			return l.readBinaryNumber()
+		} else if next == 'X' || next == 'x' {
+			return l.readHexadecimalNumber()
 		}
-		//else if next == 'X' || next == 'x' {
-		//	return l.readHexadecimalNumber()
-		//} else {
+		//else {
 		//	return l.readOctalNumber()
 		//}
 	}
@@ -90,14 +90,24 @@ func (l *Lexer) readBinaryNumber() (string, error) {
 	return l.input[position:l.position], nil
 }
 
-func (l *Lexer) readOctalNumber() string {
+func (l *Lexer) readOctalNumber() (string, error) {
 	// TODO
-	return ""
+	return "", nil
 }
 
-func (l *Lexer) readHexadecimalNumber() string {
-	// TODO
-	return ""
+func (l *Lexer) readHexadecimalNumber() (string, error) {
+	position := l.position
+	l.readChar()
+	l.readChar()
+
+	if !isHexChar(l.ch) {
+		return "", errors.New(fmt.Sprintf("SyntaxError: Expected number in radix 16 (%d:%d)", l.line, l.column-1))
+	}
+
+	for isHexChar(l.ch) {
+		l.readChar()
+	}
+	return l.input[position:l.position], nil
 }
 
 func (l *Lexer) readString(quote byte) (string, error) {
@@ -123,6 +133,10 @@ func isLetter(ch byte) bool {
 
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+func isHexChar(ch byte) bool {
+	return isDigit(ch) || ('a' <= ch && ch <= 'f' || 'A' <= ch && ch <= 'F')
 }
 
 func (l *Lexer) skipWhitespace() {

@@ -391,6 +391,9 @@ false
 0B000
 0b123
 -0b1
+0o1
+0o777
+0O456
 0x123
 0xaBc
 0xf
@@ -424,6 +427,9 @@ false
 		{makeTT(token.Numeric), "23"},
 		{makeTT(token.Minus), "-"},
 		{makeTT(token.Numeric), "0b1"},
+		{makeTT(token.Numeric), "0o1"},
+		{makeTT(token.Numeric), "0o777"},
+		{makeTT(token.Numeric), "0O456"},
 		{makeTT(token.Numeric), "0x123"},
 		{makeTT(token.Numeric), "0xaBc"},
 		{makeTT(token.Numeric), "0xf"},
@@ -586,6 +592,7 @@ func TestError(t *testing.T) {
 		"\n\"bar\n\"",
 		"0b",
 		"\n0B2",
+		"0o8",
 		"0xyz",
 	}
 
@@ -599,6 +606,7 @@ func TestError(t *testing.T) {
 		{"SyntaxError: Unterminated string constant (1:0)"},
 		{"SyntaxError: Expected number in radix 2 (0:2)"},
 		{"SyntaxError: Expected number in radix 2 (1:2)"},
+		{"SyntaxError: Expected number in radix 8 (0:2)"},
 		{"SyntaxError: Expected number in radix 16 (0:2)"},
 	}
 

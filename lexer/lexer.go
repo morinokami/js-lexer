@@ -9,12 +9,13 @@ import (
 )
 
 type Lexer struct {
-	input        string
-	position     int
-	readPosition int
-	ch           byte
-	line         int
-	column       int
+	input         string
+	position      int
+	readPosition  int
+	ch            byte
+	line          int
+	column        int
+	templateDepth int
 }
 
 func New(input string) *Lexer {
@@ -106,7 +107,7 @@ func (l *Lexer) readHexadecimalNumber() (string, error) {
 }
 
 func (l *Lexer) readString(quote byte) (string, error) {
-	literalStart := l.column - 1
+	stringStart := l.column - 1
 	position := l.position + 1
 	for {
 		l.readChar()
@@ -115,11 +116,29 @@ func (l *Lexer) readString(quote byte) (string, error) {
 		} else if l.ch == '\\' && l.peekChar(0) == quote {
 			l.readChar()
 		} else if l.ch == 0 || l.ch == '\n' {
-			return "", fmt.Errorf("SyntaxError: Unterminated string constant (%d:%d)", l.line, literalStart)
+			return "", fmt.Errorf("SyntaxError: Unterminated string constant (%d:%d)", l.line, stringStart)
 		}
 	}
 	escapedQuote := fmt.Sprintf("\\%s", string(quote))
 	return strings.ReplaceAll(l.input[position:l.position], escapedQuote, string(quote)), nil
+}
+
+func (l *Lexer) readTemplateLiteral() (string, error) {
+	tmplStart := l.column - 1
+	position := l.position + 1
+	for {
+		if l.peekChar(0) == '$' && l.peekChar(1) == '{' {
+			l.templateDepth += 1
+			return l.input[position:l.position], nil
+		}
+		l.readChar()
+		if l.ch == '`' {
+			break
+		} else if l.ch == 0 || l.ch == '\n' {
+			return "", fmt.Errorf("SyntaxError: Unterminated template (%d:%d)", l.line, tmplStart)
+		}
+	}
+	return l.input[position:l.position], nil
 }
 
 func isLetter(ch byte) bool {
@@ -199,6 +218,10 @@ func (l *Lexer) makeSourceLocation(lineStart, colStart, adjustment int) token.So
 
 func (l *Lexer) NextToken() (*token.Token, error) {
 	var tok token.Token
+
+	if l.templateDepth > 0 {
+		// TODO
+	}
 
 	l.skipWhitespace()
 
@@ -406,6 +429,14 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		tok.Literal, err = l.readString(l.ch)
 		if err != nil {
 			return nil, err
+		}
+	case '`':
+		// Template literal
+		tok.Type = token.TokenType{Label: token.Template}
+		var err error
+		tok.Literal, err = l.readTemplateLiteral()
+		if err != nil {
+			panic(err.Error())
 		}
 	// TODO: Other numeric literals, regex, template literal, ...
 

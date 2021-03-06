@@ -476,6 +476,33 @@ false
 	}
 }
 
+func TestTemplateLiteral(t *testing.T) {
+	input := "`hello`"
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		{makeTT(token.Template), "hello"},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok := l.NextToken()
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
 func TestSourceLocation(t *testing.T) {
 	input := `/**/===
 ?? hello;`

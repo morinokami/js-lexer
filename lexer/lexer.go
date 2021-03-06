@@ -9,13 +9,14 @@ import (
 )
 
 type Lexer struct {
-	input         string
-	position      int
-	readPosition  int
-	ch            byte
-	line          int
-	column        int
-	templateDepth int
+	input             string
+	position          int
+	readPosition      int
+	ch                byte
+	line              int
+	column            int
+	templateDepth     int
+	substitutionDepth int
 }
 
 func New(input string) *Lexer {
@@ -123,24 +124,6 @@ func (l *Lexer) readString(quote byte) (string, error) {
 	return strings.ReplaceAll(l.input[position:l.position], escapedQuote, string(quote)), nil
 }
 
-func (l *Lexer) readTemplateLiteral() (string, error) {
-	tmplStart := l.column - 1
-	position := l.position + 1
-	for {
-		if l.peekChar(0) == '$' && l.peekChar(1) == '{' {
-			l.templateDepth += 1
-			return l.input[position:l.position], nil
-		}
-		l.readChar()
-		if l.ch == '`' {
-			break
-		} else if l.ch == 0 || l.ch == '\n' {
-			return "", fmt.Errorf("SyntaxError: Unterminated template (%d:%d)", l.line, tmplStart)
-		}
-	}
-	return l.input[position:l.position], nil
-}
-
 func isLetter(ch byte) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch == '$'
 }
@@ -221,10 +204,10 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 
 	l.skipWhitespace()
 
-	if l.templateDepth > 0 {
+	if l.substitutionDepth > 0 {
 		if l.ch == '}' {
 			l.readChar()
-			l.templateDepth -= 1
+			l.substitutionDepth -= 1
 			return l.NextToken()
 		}
 	}
@@ -436,12 +419,7 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		}
 	case '`':
 		// Template literal
-		tok.Type = token.TokenType{Label: token.TemplateStart}
-		var err error
-		tok.Literal, err = l.readTemplateLiteral()
-		if err != nil {
-			return nil, err
-		}
+		tok = newToken(token.TemplateStart, l.ch)
 	// TODO: Other numeric literals, regex, template literal, ...
 
 	// EOF

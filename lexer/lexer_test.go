@@ -489,7 +489,10 @@ func TestTemplateLiteral(t *testing.T) {
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",

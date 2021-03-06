@@ -436,7 +436,7 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		var err error
 		tok.Literal, err = l.readTemplateLiteral()
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 	// TODO: Other numeric literals, regex, template literal, ...
 

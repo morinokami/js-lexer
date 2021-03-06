@@ -219,11 +219,15 @@ func (l *Lexer) makeSourceLocation(lineStart, colStart, adjustment int) token.So
 func (l *Lexer) NextToken() (*token.Token, error) {
 	var tok token.Token
 
-	if l.templateDepth > 0 {
-		// TODO
-	}
-
 	l.skipWhitespace()
+
+	if l.templateDepth > 0 {
+		if l.ch == '}' {
+			l.readChar()
+			l.templateDepth -= 1
+			return l.NextToken()
+		}
+	}
 
 	lineStart := l.line
 	colStart := l.column - 1
@@ -432,7 +436,7 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		}
 	case '`':
 		// Template literal
-		tok.Type = token.TokenType{Label: token.Template}
+		tok.Type = token.TokenType{Label: token.TemplateStart}
 		var err error
 		tok.Literal, err = l.readTemplateLiteral()
 		if err != nil {

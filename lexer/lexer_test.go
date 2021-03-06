@@ -477,13 +477,47 @@ false
 }
 
 func TestTemplateLiteral(t *testing.T) {
-	input := "`hello`"
+	input := "`hello`\n`goodbye ${world}!`\n`result=${1 + 2}`\n`hello ${`world ${`again`}`}`"
 
 	tests := []struct {
 		expectedType    token.TokenType
 		expectedLiteral string
 	}{
-		{makeTT(token.Template), "hello"},
+		// `hello`
+		{makeTT(token.TemplateStart), "template-start"},
+		{makeTT(token.String), "hello"},
+		{makeTT(token.TemplateEnd), "template-end"},
+		// `goodbye ${world}!`
+		{makeTT(token.TemplateStart), "template-start"},
+		{makeTT(token.String), "goodbye "},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.Identifier), "world"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.String), "!"},
+		{makeTT(token.TemplateEnd), "template-end"},
+		// `result=${1 + 2}`
+		{makeTT(token.TemplateStart), "template-start"},
+		{makeTT(token.String), "result="},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.Numeric), "1"},
+		{makeTT(token.Plus), "+"},
+		{makeTT(token.Numeric), "2"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.TemplateEnd), "template-end"},
+		// `hello ${`world ${`again`}`}`
+		{makeTT(token.TemplateStart), "template-start"},
+		{makeTT(token.String), "hello "},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.TemplateStart), "template-start"},
+		{makeTT(token.String), "world "},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.TemplateStart), "template-start"},
+		{makeTT(token.String), "again"},
+		{makeTT(token.TemplateEnd), "template-end"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.TemplateEnd), "template-end"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.TemplateEnd), "template-end"},
 	}
 
 	l := New(input)

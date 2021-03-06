@@ -197,7 +197,7 @@ func (l *Lexer) makeSourceLocation(lineStart, colStart, adjustment int) token.So
 	}
 }
 
-func (l *Lexer) NextToken() token.Token {
+func (l *Lexer) NextToken() (*token.Token, error) {
 	var tok token.Token
 
 	l.skipWhitespace()
@@ -229,10 +229,10 @@ func (l *Lexer) NextToken() token.Token {
 			var err error
 			tok.Literal, err = l.readNumber()
 			if err != nil {
-				panic(err.Error())
+				return nil, err
 			}
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
-			return tok
+			return &tok, nil
 		} else {
 			tok = newToken(token.Dot, l.ch)
 		}
@@ -405,7 +405,7 @@ func (l *Lexer) NextToken() token.Token {
 		var err error
 		tok.Literal, err = l.readString(l.ch)
 		if err != nil {
-			panic(err.Error())
+			return nil, err
 		}
 	// TODO: Other numeric literals, regex, template literal, ...
 
@@ -414,25 +414,25 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Type = token.TokenType{Label: token.EOF}
 		tok.Literal = ""
 		tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
-		return tok
+		return &tok, nil
 
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
-			return tok
+			return &tok, nil
 		} else if isDigit(l.ch) {
 			tok.Type = token.TokenType{Label: token.Numeric}
 			var err error
 			tok.Literal, err = l.readNumber()
 			if err != nil {
-				panic(err.Error())
+				return nil, err
 			}
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
-			return tok
+			return &tok, nil
 		} else {
-			panic(fmt.Sprintf("SyntaxError: Unexpected character '%s' (%d:%d)",
+			return nil, errors.New(fmt.Sprintf("SyntaxError: Unexpected character '%s' (%d:%d)",
 				string(l.ch), lineStart, colStart))
 		}
 	}
@@ -441,7 +441,7 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.readChar()
 
-	return tok
+	return &tok, nil
 }
 
 func newToken(label string, ch byte) token.Token {

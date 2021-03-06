@@ -52,7 +52,10 @@ function
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -97,7 +100,10 @@ $_
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -199,7 +205,10 @@ yield
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -252,7 +261,10 @@ func TestPunctuator(t *testing.T) {
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -361,7 +373,10 @@ func TestOperator(t *testing.T) {
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -444,7 +459,10 @@ false
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -477,7 +495,10 @@ func TestSourceLocation(t *testing.T) {
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -564,7 +585,10 @@ console.log(gcd(1263262, 553443)); // 11
 	l := New(input)
 
 	for i, tt := range tests {
-		tok := l.NextToken()
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
 
 		if tok.Type != tt.expectedType {
 			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
@@ -612,21 +636,18 @@ func TestError(t *testing.T) {
 
 	for i, tt := range tests {
 		func() {
-			defer func() {
-				err := recover()
-
-				if err == nil {
-					t.Fatalf("tests[%d] - did not panic.", i)
-				}
-
-				if err != tt.expectedMessage {
-					t.Fatalf("tests[%d] - unexpected error message. expected=%q, got=%q",
-						i, tt.expectedMessage, err)
-				}
-			}()
-
 			l := New(inputs[i])
-			l.NextToken()
+
+			_, err := l.NextToken()
+
+			if err == nil {
+				t.Fatalf("tests[%d] - did not panic.", i)
+			}
+
+			if err.Error() != tt.expectedMessage {
+				t.Fatalf("tests[%d] - unexpected error message. expected=%q, got=%q",
+					i, tt.expectedMessage, err.Error())
+			}
 		}()
 	}
 }

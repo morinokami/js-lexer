@@ -23,10 +23,10 @@ function map(f, a) {
 
         l := lexer.New(input)
 
-        tok := l.NextToken()
+        tok, _ := l.NextToken()
         for {
                 fmt.Printf("%+v\n", tok)
-                tok = l.NextToken()
+                tok, _ = l.NextToken()
                 if tok.Literal == "" {
                         break
                 }

@@ -63,10 +63,6 @@ func (l *Lexer) readNumber() (string, error) {
 		} else if next == 'O' || next == 'o' {
 			return l.readOctalNumber()
 		}
-		//else {
-		//  // TODO: Octal syntax
-		//	return l.readOctalNumber()
-		//}
 	}
 
 	position := l.position

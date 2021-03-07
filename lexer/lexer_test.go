@@ -412,6 +412,8 @@ false
 0x123
 0xaBc
 0xf
+0755
+0888
 "hello"
 'world'
 "こんにちは, 世界🌮"
@@ -448,6 +450,8 @@ false
 		{makeTT(token.Numeric), "0x123"},
 		{makeTT(token.Numeric), "0xaBc"},
 		{makeTT(token.Numeric), "0xf"},
+		{makeTT(token.Numeric), "0755"},
+		{makeTT(token.Numeric), "0888"},
 		{makeTT(token.String), "hello"},
 		{makeTT(token.String), "world"},
 		{makeTT(token.String), "こんにちは, 世界🌮"},

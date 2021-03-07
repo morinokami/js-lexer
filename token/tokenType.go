@@ -126,7 +126,7 @@ const (
 	// Literals
 	Numeric           = "numeric"
 	String            = "string"
-	Regex             = "regex"
+	RegExp            = "regexp"
 	TemplateStart     = "template-start"
 	TemplateEnd       = "template-end"
 	SubstitutionStart = "substitution-start"

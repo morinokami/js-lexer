@@ -468,7 +468,7 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 			l.templateDepth += 1
 			tok = newToken(token.TemplateStart, l.ch)
 		}
-	// TODO: Other numeric literals, regex, ...
+	// TODO: regex
 
 	// EOF
 	case 0:

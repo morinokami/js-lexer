@@ -124,10 +124,13 @@ const (
 	Arrow                        = "=>"
 
 	// Literals
-	Numeric  = "numeric"
-	String   = "string"
-	Regex    = "regex"
-	Template = "template"
+	Numeric           = "numeric"
+	String            = "string"
+	Regex             = "regex"
+	TemplateStart     = "template-start"
+	TemplateEnd       = "template-end"
+	SubstitutionStart = "substitution-start"
+	SubstitutionEnd   = "substitution-end"
 )
 
 var keywords = map[string]TokenType{

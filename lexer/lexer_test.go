@@ -476,6 +476,74 @@ false
 	}
 }
 
+func TestTemplateLiteral(t *testing.T) {
+	input := "`hello`\n`goodbye\n${world}!`\n`result=${1 + 2}`\n`hello ${`world ${`again`}`}`\n`hello"
+
+	tests := []struct {
+		expectedType    token.TokenType
+		expectedLiteral string
+	}{
+		// `hello`
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "hello"},
+		{makeTT(token.TemplateEnd), "`"},
+		// `goodbye ${world}!`
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "goodbye\n"},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.Identifier), "world"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.String), "!"},
+		{makeTT(token.TemplateEnd), "`"},
+		// `result=${1 + 2}`
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "result="},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.Numeric), "1"},
+		{makeTT(token.Plus), "+"},
+		{makeTT(token.Numeric), "2"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.TemplateEnd), "`"},
+		// `hello ${`world ${`again`}`}`
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "hello "},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "world "},
+		{makeTT(token.SubstitutionStart), "${"},
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "again"},
+		{makeTT(token.TemplateEnd), "`"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.TemplateEnd), "`"},
+		{makeTT(token.SubstitutionEnd), "}"},
+		{makeTT(token.TemplateEnd), "`"},
+		// `hello<EOF>
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "hello"},
+		{makeTT(token.EOF), ""},
+	}
+
+	l := New(input)
+
+	for i, tt := range tests {
+		tok, err := l.NextToken()
+		if err != nil {
+			t.Fatalf("tests[%d] - unexpected error: %q", i, err.Error())
+		}
+
+		if tok.Type != tt.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%+v, got=%+v",
+				i, tt.expectedType, tok.Type)
+		}
+
+		if tok.Literal != tt.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
+				i, tt.expectedLiteral, tok.Literal)
+		}
+	}
+}
+
 func TestSourceLocation(t *testing.T) {
 	input := `/**/===
 ?? hello;`

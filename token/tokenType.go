@@ -129,8 +129,8 @@ const (
 	Regex             = "regex"
 	TemplateStart     = "template-start"
 	TemplateEnd       = "template-end"
-	SubstitutionStart = "${"
-	SubstitutionEnd   = "}"
+	SubstitutionStart = "substitution-start"
+	SubstitutionEnd   = "substitution-end"
 )
 
 var keywords = map[string]TokenType{

@@ -124,6 +124,15 @@ func (l *Lexer) readString(quote byte) (string, error) {
 	return strings.ReplaceAll(l.input[position:l.position], escapedQuote, string(quote)), nil
 }
 
+func (l *Lexer) readTemplateString() (string, error) {
+	position := l.position
+	for !l.isTemplateContextChanger() && l.ch != 0 {
+		l.readChar()
+		// TODO: if l.ch == 0 { eof error ? }
+	}
+	return l.input[position:l.position], nil
+}
+
 func isLetter(ch byte) bool {
 	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || ch == '$'
 }
@@ -186,6 +195,36 @@ func (l *Lexer) skipMultiLineComment() {
 	}
 }
 
+func (l *Lexer) isInTemplateString() bool {
+	return l.templateDepth > l.substitutionDepth
+}
+
+func (l *Lexer) isTemplateContextChanger() bool {
+	return l.ch == '`' || l.ch == '$' && l.peekChar(0) == '{'
+}
+
+func (l *Lexer) isInSubstitutionContext() bool {
+	return l.substitutionDepth > 0
+}
+
+func newToken(label string, ch byte) token.Token {
+	return token.Token{
+		Type:    token.TokenType{Label: label},
+		Literal: string(ch),
+	}
+}
+
+func makeMultiCharToken(l *Lexer, label string, n int) token.Token {
+	literal := ""
+	for i := 0; i < n; i++ {
+		literal += string(l.ch)
+		l.readChar()
+	}
+	literal += string(l.ch)
+
+	return token.Token{Type: token.TokenType{Label: label}, Literal: literal}
+}
+
 func (l *Lexer) makeSourceLocation(lineStart, colStart, adjustment int) token.SourceLocation {
 	return token.SourceLocation{
 		Start: token.Position{
@@ -204,12 +243,14 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 
 	l.skipWhitespace()
 
-	if l.substitutionDepth > 0 {
-		if l.ch == '}' {
-			l.readChar()
-			l.substitutionDepth -= 1
-			return l.NextToken()
+	if l.isInTemplateString() && !l.isTemplateContextChanger() && l.ch != 0 {
+		tok.Type = token.TokenType{Label: token.String}
+		var err error
+		tok.Literal, err = l.readTemplateString()
+		if err != nil {
+			return nil, err
 		}
+		return &tok, nil
 	}
 
 	lineStart := l.line
@@ -225,7 +266,12 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 	case '{':
 		tok = newToken(token.LBrace, l.ch)
 	case '}':
-		tok = newToken(token.RBrace, l.ch)
+		if l.isInSubstitutionContext() {
+			l.substitutionDepth -= 1
+			tok = newToken(token.SubstitutionEnd, l.ch)
+		} else {
+			tok = newToken(token.RBrace, l.ch)
+		}
 	case '[':
 		tok = newToken(token.LBracket, l.ch)
 	case ']':
@@ -419,8 +465,14 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		}
 	case '`':
 		// Template literal
-		tok = newToken(token.TemplateStart, l.ch)
-	// TODO: Other numeric literals, regex, template literal, ...
+		if l.isInTemplateString() {
+			l.templateDepth -= 1
+			tok = newToken(token.TemplateEnd, l.ch)
+		} else {
+			l.templateDepth += 1
+			tok = newToken(token.TemplateStart, l.ch)
+		}
+	// TODO: Other numeric literals, regex, ...
 
 	// EOF
 	case 0:
@@ -430,7 +482,15 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 		return &tok, nil
 
 	default:
-		if isLetter(l.ch) {
+		if l.isInTemplateString() && l.ch == '$' && l.peekChar(0) == '{' {
+			l.substitutionDepth += 1
+			tok.Type = token.TokenType{Label: token.SubstitutionStart}
+			tok.Literal = "${"
+			tok.Loc = l.makeSourceLocation(lineStart, colStart, +1)
+			l.readChar()
+			l.readChar()
+			return &tok, nil
+		} else if isLetter(l.ch) {
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
 			tok.Loc = l.makeSourceLocation(lineStart, colStart, -1)
@@ -455,22 +515,4 @@ func (l *Lexer) NextToken() (*token.Token, error) {
 	l.readChar()
 
 	return &tok, nil
-}
-
-func newToken(label string, ch byte) token.Token {
-	return token.Token{
-		Type:    token.TokenType{Label: label},
-		Literal: string(ch),
-	}
-}
-
-func makeMultiCharToken(l *Lexer, label string, n int) token.Token {
-	literal := ""
-	for i := 0; i < n; i++ {
-		literal += string(l.ch)
-		l.readChar()
-	}
-	literal += string(l.ch)
-
-	return token.Token{Type: token.TokenType{Label: label}, Literal: literal}
 }

@@ -477,7 +477,7 @@ false
 }
 
 func TestTemplateLiteral(t *testing.T) {
-	input := "`hello`\n`goodbye ${world}!`\n`result=${1 + 2}`\n`hello ${`world ${`again`}`}`"
+	input := "`hello`\n`goodbye\n${world}!`\n`result=${1 + 2}`\n`hello ${`world ${`again`}`}`\n`hello"
 
 	tests := []struct {
 		expectedType    token.TokenType
@@ -489,7 +489,7 @@ func TestTemplateLiteral(t *testing.T) {
 		{makeTT(token.TemplateEnd), "`"},
 		// `goodbye ${world}!`
 		{makeTT(token.TemplateStart), "`"},
-		{makeTT(token.String), "goodbye "},
+		{makeTT(token.String), "goodbye\n"},
 		{makeTT(token.SubstitutionStart), "${"},
 		{makeTT(token.Identifier), "world"},
 		{makeTT(token.SubstitutionEnd), "}"},
@@ -518,6 +518,10 @@ func TestTemplateLiteral(t *testing.T) {
 		{makeTT(token.TemplateEnd), "`"},
 		{makeTT(token.SubstitutionEnd), "}"},
 		{makeTT(token.TemplateEnd), "`"},
+		// `hello<EOF>
+		{makeTT(token.TemplateStart), "`"},
+		{makeTT(token.String), "hello"},
+		{makeTT(token.EOF), ""},
 	}
 
 	l := New(input)
